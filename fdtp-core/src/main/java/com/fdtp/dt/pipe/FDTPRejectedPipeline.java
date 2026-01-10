@@ -9,16 +9,10 @@ import java.util.ListIterator;
 public class FDTPRejectedPipeline {
     private LinkedList<FDTPoolRejectedHandler> chains = new LinkedList<>();
 
-    public void process(Object[] args){
+    public void process(Runnable r, FDynamicThreadPool pool){
         ListIterator<FDTPoolRejectedHandler> fDTPoolRejectedHandlerListIterator = chains.listIterator();
         while(fDTPoolRejectedHandlerListIterator.hasNext()){
-            if (args!=null && args.length>2){
-//                Runnable r, FDynamicThreadPool pool
-                Runnable r=(Runnable) args[0];
-                FDynamicThreadPool pool=(FDynamicThreadPool) args[1];
-                fDTPoolRejectedHandlerListIterator.next().process(r, pool);
-            }
-
+            fDTPoolRejectedHandlerListIterator.next().process(r, pool);
         }
     }
 
