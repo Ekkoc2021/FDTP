@@ -19,26 +19,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * 动态线程池接口
  */
-public abstract class FDynamicThreadPool extends ThreadPoolExecutor {
+public abstract class FDynamicThreadPool  {
 
     // 可配置改变前和改变后的处理器
     private FDTPChangePipeline changePipeline = new FDTPChangePipeline();
-
-    public FDynamicThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
-    }
-
-    public FDynamicThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
-    }
-
-    public FDynamicThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, RejectedExecutionHandler handler) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, handler);
-    }
-
-    public FDynamicThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory, RejectedExecutionHandler handler) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
-    }
 
     public void addChangeHandler(FDTPoolChangeHanlder hanlder) {
         changePipeline.getChains().addLast(hanlder);
