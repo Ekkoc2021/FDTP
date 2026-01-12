@@ -67,7 +67,6 @@ public class DisruptorFDTPTest {
         }
 
 
-        pool.shutdown();
         try {
             if (!pool.awaitTermination(60, TimeUnit.SECONDS)) {
                 // 3. 超时后强制关闭

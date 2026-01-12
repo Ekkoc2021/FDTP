@@ -46,11 +46,6 @@
                 <version>${logback.version}</version>
                 <optional>true</optional>
             </dependency>
-            <dependency>
-                <groupId>cglib</groupId>
-                <artifactId>cglib</artifactId>
-                <version>${cglib.verison}</version>
-            </dependency>
 
             <dependency>
                 <groupId>com.lmax</groupId>

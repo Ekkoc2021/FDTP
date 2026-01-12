@@ -35,12 +35,6 @@
             <optional>true</optional>
         </dependency>
 
-        <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib</artifactId>
-            <optional>true</optional>
-        </dependency>
-
 
         <dependency>
             <groupId>com.lmax</groupId>

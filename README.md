@@ -38,6 +38,22 @@
 
 #### 动态线程池实现 : DT
 
+核心参数
+
+- corePoolSize : 核心线程池数量
+- maximumPoolSize : 最大线程池数量
+- activeCount : 活跃线程数量,当前正在执行任务的线程
+- poolSize: 线程池中的线程数量
+- largestPoolSize : 最大线程数量
+- waitingSize : 队列中的任务量
+- queueMaxSize : 队列最大长度
+- taskCount: 任务量
+- completedTasks : 已经完成的任务量
+- errorSize : 异常任务量,封装runable捕获异常即可
+- rejectSize : 拒绝的任务量
+
+
+
 > 具体实现动态刷新所有参数的功能
 >
 > 动态修改线程池实现的功能: 从普通的jdk线程池,其他的线程池实现

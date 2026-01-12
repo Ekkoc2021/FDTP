@@ -46,31 +46,16 @@ public abstract class FDynamicThreadPool  {
     public void setRejectedExecutionHandler(RejectedExecutionHandler rejectedExecutionHandler) {
 
         FDynamicThreadPool fdtp = this;
-        // 动态代理
-        MethodInterceptor proxy = new MethodInterceptor() {
-            /**
-             * @param object 表示要进行增强的对象
-             * @param method 表示拦截的方法
-             * @param args 数组表示参数列表
-             * @param methodProxy 表示对方法的代理，invokeSuper方法表示对被代理对象方法的调用
-             * @return 执行结果
-             * @throws Throwable
-             */
-            @Override
-            public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
-                // 走pipeline处理的时候传入 FDynamicThreadPool: Runnable r, FDynamicThreadPool pool
-                rejectedPipeline.process((Runnable) args[0], fdtp);
 
-                // 走真实拒绝策略的时候 转用ThreadPoolExcutor
-                Object result = methodProxy.invokeSuper(object, args);
-                return result;
+        RejectedExecutionHandler rh=new RejectedExecutionHandler(){
+            @Override
+            public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+                rejectedPipeline.process(r,fdtp);
+                rejectedExecutionHandler.rejectedExecution(r,executor);
             }
         };
 
-        Enhancer enhancer = new Enhancer();
-        enhancer.setSuperclass(RejectedExecutionHandler.class);
-        enhancer.setCallback(proxy);
-        this.rejectedExecutionHandler = (RejectedExecutionHandler) enhancer.create();   // 创建代理类
+        this.rejectedExecutionHandler = rh;   // 创建代理类
     }
 
 
@@ -98,6 +83,8 @@ public abstract class FDynamicThreadPool  {
      * @return
      */
     protected abstract boolean update(FDTPoolConfig config);
+
+
 
 
 }

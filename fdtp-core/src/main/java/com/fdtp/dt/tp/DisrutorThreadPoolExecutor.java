@@ -1,6 +1,5 @@
 package com.fdtp.dt.tp;
 
-import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.InsufficientCapacityException;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.SleepingWaitStrategy;
@@ -10,10 +9,12 @@ import com.lmax.disruptor.dsl.ProducerType;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -22,7 +23,29 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DisrutorThreadPoolExecutor implements ExecutorService {
 
 
-    public DisrutorThreadPoolExecutor(int corePoolSize) {
+    private int corePoolSize;
+    private int maximumPoolSize;
+    private int queueCapacity;
+    private long keepAliveTime; // 无效
+    private TimeUnit keepAliveTimeUnit; // 无效
+    private BlockingQueue<Runnable> workQueue;// 无效
+    private int queueSize;
+    private ThreadFactory threadFactory = new NamedThreadFactory("testPool", "testThread", false);
+    private RejectedExecutionHandler handler;
+
+    // disruptor对象
+    private Disruptor<TaskEvent> disruptor = new Disruptor<>(
+            TaskEvent::new,
+            524288,
+            threadFactory,
+            ProducerType.MULTI,
+            new SleepingWaitStrategy() // 平衡策略
+    );
+
+    public DisrutorThreadPoolExecutor(int corePoolSize
+                                      ) {
+        this.corePoolSize = corePoolSize;
+
         Worker[] workers = new Worker[corePoolSize];
         for (int i = 0; i < corePoolSize; i++) {
             workers[i] = new Worker();
@@ -53,16 +76,6 @@ public class DisrutorThreadPoolExecutor implements ExecutorService {
         }
     }
 
-    NamedThreadFactory threadFactory = new NamedThreadFactory("testPool", "testThread", false);
-
-    // disruptor对象
-    private Disruptor<TaskEvent> disruptor = new Disruptor<>(
-            TaskEvent::new,
-            524288,
-            threadFactory,
-            ProducerType.MULTI,
-            new SleepingWaitStrategy() // 平衡策略
-    );
 
     private class NamedThreadFactory implements ThreadFactory {
         private String poolName;
