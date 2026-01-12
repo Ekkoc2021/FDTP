@@ -22,6 +22,7 @@
         <logback.version>1.2.11</logback.version>
         <slf4j.version>1.7.36</slf4j.version>
         <cglib.verison>3.3.0</cglib.verison>
+        <disrutpor.version>3.4.2</disrutpor.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -49,6 +50,12 @@
                 <groupId>cglib</groupId>
                 <artifactId>cglib</artifactId>
                 <version>${cglib.verison}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.lmax</groupId>
+                <artifactId>disruptor</artifactId>
+                <version>${disrutpor.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

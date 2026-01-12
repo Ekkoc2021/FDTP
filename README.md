@@ -4,7 +4,7 @@
 
 
 
-统一管理线程池的组件==>容器
+#### 统一管理线程池的组件==>容器
 
 - 核心:提供刷新线程池参数的接口
 - 其他功能: 线程池监控接口
@@ -15,7 +15,28 @@
 >
 > 根据业务和需求场景不重启应用动态刷新线程池参数 
 
-动态线程池实现 : DT
+告警功能: 在同一管理组件里面添加定时任务,定时对组件内所有的线程池做一个扫描
+资源告警相关的问题: 如达到任务队列占用量时,每次添加任务都可能会触发一次对应线程池的告警(告警风暴)
+
+- 一些可能有用的指标
+  线程池线程资源利用率 : 活跃线程池/maxPoolSize
+  任务队列占用量: 队列任务数量/总容量
+  拒绝量: 拒绝任务量/总任务量
+  任务执行成功率: 无异常的任务/总执行的任务  
+  任务处理速率: 单位时间内的任务完成率 
+  任务增长速率: 单位时间内增长的任务量 
+
+
+
+线程池管理相关参数
+
+- 分组,应用名称,描述
+
+
+
+
+
+#### 动态线程池实现 : DT
 
 > 具体实现动态刷新所有参数的功能
 >
@@ -24,6 +45,8 @@
 - 线程池类型: 普通jdk线程池,支持虚拟线程的线程池池,其他类型的线程池(disruptor实现)
   自定义一个可动态修改线程池参数的类 ==> 只要实现这个类都可以注册到线程池容器中
 - 线程池拒接策略: 类似aop的机制,增强原有拒绝策略,告警机制等等
+
+
 
 线程池类型
 
@@ -34,140 +57,40 @@
 
 
 
+线程池的一些扩展点:方便后续在统一管理部分做接口扩展
+
+- 线程池参数变更扩展点handler : 允许在变更前和后做一些处理,如配置入库
+- 线程池拒绝策略扩展点handler:  在执行具体拒绝策略时做一些处理, 通常来说拒绝任务说明当前线程池参数不适合当前场景,需要进行调整,如发邮件通知等操作
+- 提交任务扩展点: 感觉没有什么意义!
+- 任务执行扩展点: 重新包装传入的runable对象 ==> 可以用来统计任务失败数量,这个应该会有用
+
+
+
+线程池核心参数:
+
 - corePoolSize : 核心线程池的大小，如果核心线程池有空闲位置，这时新的任务就会被核心线程池新建一个线程执行，执行完毕后不会销毁线程，线程会进入缓存队列等待再次被运行。
 - maximunPoolSize : 最大线程池数量,超过这个数量,新任务到达会放入阻塞队列
 - workQueue : 阻塞队列,jdk队列不支持动态修改容量,需要解决
 - 拒绝策略 :增强拒绝策略,一些告警机制通知通过拒接策略去实现
 
-Disrutor
+动态线程池参数:
 
-```
-消费者发布事件 => disruptor执行对应实现的handler处理事件
-```
-
+- 线程池参数这部分可以考虑就只和线程池运行机制相关
+- 和业务相关尽量放到管理组件去定义: 1.方便后续扩展,2.分层管理
 
 
-```Java
-import com.lmax.disruptor.*;
-import com.lmax.disruptor.dsl.Disruptor;
-import com.lmax.disruptor.dsl.ProducerType;
-import com.lmax.disruptor.util.DeadlineTimerWheel;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+   
 
-// 1. 定义事件（消息模型）
-class LongEvent {
-    private long value;
-
-    public void set(long value) {
-        this.value = value;
-    }
-
-    public long get() {
-        return value;
-    }
-}
-
-// 2. 定义事件工厂
-class LongEventFactory implements EventFactory<LongEvent> {
-    @Override
-    public LongEvent newInstance() {
-        return new LongEvent();
-    }
-}
-
-// 3. 定义事件处理器（消费者）
-class LongEventHandler implements EventHandler<LongEvent> {
-    @Override
-    public void onEvent(LongEvent event, long sequence, boolean endOfBatch) {
-        System.out.println("Event: " + event.get() + " processed by " + Thread.currentThread().getName());
-    }
-}
-
-// 4. 定义生产者
-class Producer {
-    private final RingBuffer<LongEvent> ringBuffer;
-
-    public Producer(RingBuffer<LongEvent> ringBuffer) {
-        this.ringBuffer = ringBuffer;
-    }
-
-    public void onData(long value) {
-        // 1. 获取下一个可用的序号
-        long sequence = ringBuffer.next();
-        try {
-            // 2. 获取该序号对应的事件
-            LongEvent event = ringBuffer.get(sequence);
-            // 3. 设置事件数据
-            event.set(value);
-        } finally {
-            // 4. 发布事件（必须在finally中确保发布）
-            ringBuffer.publish(sequence);
-        }
-    }
-}
-
-// 5. 主程序
-public class DisruptorDemo {
-    public static void main(String[] args) throws InterruptedException {
-        // RingBuffer大小，必须是2的幂次方
-        int bufferSize = 1024;
-        
-        // 创建线程工厂
-        ThreadFactory threadFactory = Executors.defaultThreadFactory();
-        
-        // 1. 创建Disruptor实例
-        Disruptor<LongEvent> disruptor = new Disruptor<>(
-            new LongEventFactory(),           // 事件工厂
-            bufferSize,                       // RingBuffer大小
-            threadFactory,                    // 线程工厂
-            ProducerType.SINGLE,              // 单生产者模式
-            new BlockingWaitStrategy()        // 阻塞等待策略
-        );
-        
-        // 2. 注册事件处理器（消费者）
-        disruptor.handleEventsWith(new LongEventHandler());
-        
-        // 3. 启动Disruptor
-        disruptor.start();
-        
-        // 4. 获取RingBuffer
-        RingBuffer<LongEvent> ringBuffer = disruptor.getRingBuffer();
-        
-        // 5. 创建生产者
-        Producer producer = new Producer(ringBuffer);
-        
-        // 6. 生产数据
-        CountDownLatch latch = new CountDownLatch(5);
-        for (long i = 0; i < 5; i++) {
-            final long value = i;
-            new Thread(() -> {
-                producer.onData(value);
-                System.out.println("Produced: " + value);
-                latch.countDown();
-            }).start();
-            
-            // 控制生产速度，便于观察
-            Thread.sleep(100);
-        }
-        
-        // 等待所有生产完成
-        latch.await();
-        
-        // 7. 关闭Disruptor
-        disruptor.shutdown();
-        System.out.println("Disruptor shutdown completed");
-    }
-}
-```
-
-
+disruptor封装成线程池接口
 
 - 将disruptor封装成线程池的接口
 - disruptor的动态参数设置 : 可以通过切换disruptor对象
   拒绝策略:统一封装的线程策略
+
+> 
+
+
 
 
 
