@@ -51,6 +51,7 @@
 - completedTasks : 已经完成的任务量
 - errorSize : 异常任务量,封装runable捕获异常即可
 - rejectSize : 拒绝的任务量
+- pendingSize: 未完成的任务
 
 
 

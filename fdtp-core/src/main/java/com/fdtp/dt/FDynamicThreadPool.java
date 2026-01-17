@@ -5,16 +5,12 @@ import com.fdtp.dt.handler.FDTPoolRejectedHandler;
 import com.fdtp.dt.handler.FDTPoolChangeHanlder;
 import com.fdtp.dt.pipe.FDTPChangePipeline;
 import com.fdtp.dt.pipe.FDTPRejectedPipeline;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
 
-import java.lang.reflect.Method;
-import java.util.concurrent.BlockingQueue;
+
 import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadFactory;
+
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+
 
 /**
  * 动态线程池接口
